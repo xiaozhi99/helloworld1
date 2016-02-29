@@ -1,0 +1,70 @@
+今天修改了查询，用name查询，下一次改成可选择的查询。遇到问题1name查到好多重复，分页问题，2重新载入findEmpList时候$content会改变，解决方案
+是用session保存他。
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html;charset="utf-8""/>
+<title>查询结果列表</title>
+<script type="text/javascript">
+function confirmDele(val){
+         return window.confirm("是否 要删除id="+val+"的用户");
+}
+</script>
+</head>
+<img width="100px" src="./images/1.gif"/>
+ <?php
+    require_once 'EmpService.class.php';
+    require_once 'FenyePage.class.php';
+    require_once 'common.php';
+    require_once 'empProcess.php';
+    //先验证 防止非法登录
+    checkUserValidate();
+    
+//     $data = unserialize($_SESSION['data']);
+    
+    session_start();
+   $content=$_SESSION['content'];
+
+    $empService=new EmpService();
+     //创建一个FenyePage对象实例
+     $fenyePage=new FenyePage();
+     
+     $fenyePage->pageNow=1;
+     $fenyePage->pageSize=6;
+     $fenyePage->gotoUrl="findEmpList.php";
+   
+    //这里需要根据用户的点击来修改pageNow的值
+    //这里我们需要判断是否有这个pageNow发出 有就是用 没有就默认为显示第一页
+    if(!empty($_GET['pageNow'])){
+         $fenyePage->pageNow=$_GET['pageNow'];
+    }
+ 
+     $empService->getFenyePage2($content,$fenyePage);
+     
+    echo "<table width='700px' border='1px' bordercolor='green' cellspacing='0px'>";
+    echo "<tr><th>id</th><th>name</th><th>grade</th><th>email</th><th>salary</th><th>删除用户</th><th>修改用户</th></tr>";
+    
+//     $data = unserialize($_SESSION['data']);
+    for($i=0;$i<count($fenyePage->res_array);$i++){
+        
+        $row=$fenyePage->res_array[$i];
+        
+        echo "<tr><td>{$row['id']}</td><td>{$row['name']}</td><td>{$row['grade']}</td><td>{$row['email']}</td>".
+            "<td>{$row['salary']}</td><td><a onclick='return confirmDele({$row['id']})'  href='empProcess.php?flag=del&id={$row['id']}'>删除用户</a></td><td><a href='updateEmpUI.php?id={$row['id']}'>修改用户</a></td></tr>";
+    }
+    echo "<h1>查询结果列表</h1>";
+    echo "</table>";
+   
+    //显示上一页和下一页
+    echo $fenyePage->navigate;
+   
+    
+    //可以使用for循环打印链接
+   /*    //指定跳转到哪一页
+    echo "<br/><br/>";*/
+    ?>
+    <form action="findEmpList.php">
+                跳转到<input type="text" name="pageNow"/>
+    <input type="submit" value="Go"/>
+    </form>
+  
+</html>
