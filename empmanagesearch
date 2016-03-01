@@ -1,0 +1,103 @@
+ 不断学习中 今天用了一个简单的下拉列表实现多种方式查询，虽然实现了，但是总感觉不太妙，原因就是使用分层模式后的变量在页面传递问题，我现在用
+ 的方法还是url传递或者session传递，总感觉不太舒服。先这样吧，慢慢来，不断改进吧。
+ 1.findEmp.php
+ <html>
+<head>
+<meta http-equiv="content-type" content="text/html;charset="utf-8""/>
+</head>
+<hr/>
+<h1>查询雇员</h1>
+<h3>请选择查询的方式<h3>
+<form action="empProcess.php" method="post">
+<table>
+<tr><td>
+<select name="chaxunfangshi">
+<option value="id">id</option>
+<option value="name">名字</option>
+<option value="grade">级别</option>
+<option value="email">电邮</option>
+<option value="salary">薪水</option>
+</select>
+</td>
+<td><input type="text" name="content" value=""></td>
+</tr>
+
+<input type="hidden" name="flag" value="findemp"/>
+<tr>
+<td><input type="submit" value="查询用户"/></td>
+<td><input type="reset" value="重新选择"/></td>
+</tr>
+</table>
+</form>
+</html>
+
+ 2.empProcess.php主要代码
+ elseif ($flag=="findemp"){
+        //希望执行查询雇员
+        //接收数据
+       
+        $content=$_POST['content'];
+        $chaxunfangshi=$_POST['chaxunfangshi'];
+       if(!empty($content)){
+           session_start();
+           $_SESSION['content']=$content;
+           $_SESSION['chaxunfangshi']=$chaxunfangshi;
+            header("Location:findEmpList.php?content=$content");
+           exit();
+       }else{
+           header("Location:error.php");
+           exit();
+       }
+  
+  3.findEmpList.php主要代码
+       session_start();
+    $content=$_SESSION['content'];
+
+    $empService=new EmpService();
+     //创建一个FenyePage对象实例
+     $fenyePage=new FenyePage();
+     
+     $fenyePage->pageNow=1;
+     $fenyePage->pageSize=6;
+     $fenyePage->gotoUrl="findEmpList.php";
+   
+    //这里需要根据用户的点击来修改pageNow的值
+    //这里我们需要判断是否有这个pageNow发出 有就是用 没有就默认为显示第一页
+    if(!empty($_GET['pageNow'])){
+         $fenyePage->pageNow=$_GET['pageNow'];
+    }
+ 
+     $empService->getFenyePage2($content,$fenyePage);
+  
+  4.EmpService.class.php
+  //对查询结果分页
+        function getFenyePage2($content,$fenyePage){
+             session_start();
+             $chaxunfangshi=$_SESSION['chaxunfangshi'];
+             //创建一个SqlHelper对象实例
+             $sqlHelper=new SqlHelper();
+             if($chaxunfangshi=="id"){
+                 $sql1="select * from emp where id='$content' limit "
+                     .($fenyePage->pageNow-1)*$fenyePage->pageSize.",".$fenyePage->pageSize;               
+                 $sql2="select count(id) from emp where id='$content'";  
+             }else if($chaxunfangshi=="name") {                   
+                 $sql1="select * from emp where name='$content' limit "
+                 .($fenyePage->pageNow-1)*$fenyePage->pageSize.",".$fenyePage->pageSize;
+                 $sql2="select count(id) from emp where name='$content'";
+             }else if($chaxunfangshi=="grade") {                   
+                 $sql1="select * from emp where grade='$content' limit "
+                 .($fenyePage->pageNow-1)*$fenyePage->pageSize.",".$fenyePage->pageSize;
+                 $sql2="select count(id) from emp where grade='$content'";
+             }else if($chaxunfangshi=="email") {                   
+                 $sql1="select * from emp where email='$content' limit "
+                 .($fenyePage->pageNow-1)*$fenyePage->pageSize.",".$fenyePage->pageSize;
+                 $sql2="select count(id) from emp where email='$content'";
+             }else  {                   
+                 $sql1="select * from emp where salary='$content' limit "
+                 .($fenyePage->pageNow-1)*$fenyePage->pageSize.",".$fenyePage->pageSize;
+                 $sql2="select count(id) from emp where salary='$content'";
+             }
+             $sqlHelper->execute_dql_fenye($sql1, $sql2, $fenyePage);
+             
+             $sqlHelper->close_connect();
+        }
